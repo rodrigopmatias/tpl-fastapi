@@ -14,24 +14,24 @@ class User(BaseModel):
     id: int
     email: str
     is_admin: bool
-    rules: list[str]
+    roles: list[str]
 
 
-def _load_key(filepath: Path) -> str:
+def load_key(filepath: Path) -> str:
     buffer = ""
 
     with filepath.open() as fp:
         for chunk in iter(lambda: fp.read(8192), ""):
             buffer += chunk
 
-    return buffer
+    return buffer[:-1] if buffer[-1] == '\n' else buffer
 
 
 def current_user(
     authorization: HTTPAuthorizationCredentials = Depends(get_authorization),
 ) -> User:
     try:
-        key = _load_key(settings.JWT_SECERT_KEY_FILE)
+        key = load_key(settings.JWT_SECERT_KEY_FILE)
 
         data: dict[str, Any] = jwt.decode(
             authorization.credentials, key, algorithms=[settings.JWT_ALGORITHM]

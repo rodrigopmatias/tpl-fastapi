@@ -16,11 +16,11 @@ class __Settings(BaseSettings):
     )
 
     JWT_ALGORITHM: str = Field(
-        default="RS256", description="Algoritimo de assinatura e criptografia do token"
+        default="HS256", description="Algoritimo de assinatura e criptografia do token"
     )
 
     JWT_SECERT_KEY_FILE: Path = Field(
-        default="pub.pem",
+        default="pub.key",
         description="Arquivo que armazena a secret para validação do token",
     )
 
