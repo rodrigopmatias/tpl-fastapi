@@ -1,0 +1,15 @@
+ignore:
+  CVE-2024-33664:
+    - expires: 2025-01-01T00:00:00+0000
+      package: python-jose
+  CVE-2024-33663:
+    - expires: 2025-01-01T00:00:00+0000
+      package: python-jose
+  CVE-2024-23342:
+    - expires: 2025-01-01T00:00:00+0000
+      package: ecdsa
+  PVE-2024-64396:
+    - expires: 2025-01-01T00:00:00+0000
+      package: ecdsa
+ 
+version: "1.0"

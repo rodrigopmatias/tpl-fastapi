@@ -1,0 +1,10 @@
+{
+  "project_name": "my-project",
+  "project_slug": "{{ cookiecutter.project_name.lower() | replace(' ', '-') | replace('.', '-') | trim() }}",
+  "project_module": "{{ cookiecutter.project_slug | replace('-', '_') }}",
+  "api_version": "1.0",
+  "description": "one short description about project",
+  "version": "1.0.0",
+  "author_name": "Your Complete Name",
+  "author_email": "email@server.com"
+}

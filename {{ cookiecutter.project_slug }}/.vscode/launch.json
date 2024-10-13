@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run API",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "--factory",
+        "{{ cookiecutter.project_module }}:create_app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "DB_URL": "sqlite+aiosqlite://",
+        "DEBUG": "yes"
+      }
+    }
+  ]
+}
