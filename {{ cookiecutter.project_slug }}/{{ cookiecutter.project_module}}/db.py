@@ -19,9 +19,10 @@ async def migrate(bind: AsyncEngine) -> None:
 
 
 async def datasource() -> AsyncGenerator[Datasource, None]:
+    engine = create_async_engine(settings.DB_URL)
+
     try:
-        bind = create_async_engine(settings.DB_URL)
-        await migrate(bind)
-        yield async_sessionmaker(bind)
+        await migrate(engine)
+        yield async_sessionmaker(engine)
     finally:
-        await bind.dispose()
+        await engine.dispose()

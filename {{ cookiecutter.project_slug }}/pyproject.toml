@@ -39,7 +39,7 @@ build-backend = "poetry.core.masonry.api"
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "-vvv --cov={{ cookiecutter.project_module }}  cov-report=term-missing"
+addopts = "-vvv --cov={{ cookiecutter.project_module }} --cov-report=term-missing"
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "session"
 
