@@ -5,7 +5,7 @@
   "database_support": "sqlite",
   "api_version": "1.0",
   "description": "one short description about project",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "author_name": "Your Complete Name",
   "author_email": "email@server.com"
 }

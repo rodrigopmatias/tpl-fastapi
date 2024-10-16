@@ -1,6 +1,12 @@
 #!/bin/bash
 
-poetry install -E {{ cookiecutter.database_support }}
+if [ "{{ cookiecutter.database_support }}" != "sqlite" ]; then
+  echo "poetry install -E {{ cookiecutter.database_support }}"
+  poetry install -E {{ cookiecutter.database_support }}
+else
+  echo "poetry install"
+  poetry install
+fi
 
 git init
 poetry run pre-commit install

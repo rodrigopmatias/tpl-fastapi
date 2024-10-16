@@ -10,7 +10,8 @@ from {{cookiecutter.project_module}}.auth import load_key
 from {{cookiecutter.project_module}}.config import settings
 
 
-def change_settings() -> None:
+@pytest.fixture(autouse=True)
+def prepare_configurations() -> None:
     settings.DB_URL = "sqlite+aiosqlite://"
     settings.JWT_ALGORITHM = "HS256"
     settings.JWT_SECERT_KEY_FILE = Path("pub.key")
@@ -18,7 +19,6 @@ def change_settings() -> None:
 
 @pytest.fixture()
 def app() -> FastAPI:
-    change_settings()
     return create_app()
 
 
@@ -39,8 +39,6 @@ def user_data() -> dict[str, Any]:
 
 @pytest.fixture()
 def authorization(user_data: dict[str, Any]) -> str:
-    change_settings()
-
     return jwt.encode(
         {"user": user_data},
         load_key(settings.JWT_SECERT_KEY_FILE),
