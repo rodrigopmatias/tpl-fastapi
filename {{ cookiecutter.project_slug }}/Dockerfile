@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-ARG APP_EXTRA=sqlite 
+ARG APP_EXTRA={{ cookiecutter.database_support }} 
 
 WORKDIR /app
 
@@ -18,4 +18,4 @@ COPY --chown=appuser:appuser . .
 EXPOSE 8000/tcp
 
 USER appuser
-CMD ["uvicorn", "--factory", "fastapi_template:create_app", "--host", "0", "--port", "8000"]
+CMD ["uvicorn", "--factory", "{{ cookiecutter.project_module }}:create_app", "--host", "0", "--port", "8000"]
