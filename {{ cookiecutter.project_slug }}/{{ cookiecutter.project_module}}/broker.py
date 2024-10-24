@@ -9,8 +9,8 @@ import aio_pika
 import orjson as json
 from pydantic import BaseModel, Field
 
-from machine_api.config import settings
-from machine_api.life import LifeControlTask, life_control
+from {{ cookiecutter.project_module }}.config import settings
+from {{ cookiecutter.project_module }}.life import LifeControlTask, life_control
 
 logger = getLogger(__name__)
 

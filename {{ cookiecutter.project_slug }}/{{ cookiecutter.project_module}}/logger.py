@@ -22,7 +22,7 @@ def setup() -> None:
             },
             "loggers": {
                 "uvicorn": {"handlers": ["console"], "propagate": False},
-                "machine_api": {
+                "{{ cookiecutter.project_module }}": {
                     "handlers": ["console"],
                     "propagate": True,
                     "level": "INFO",

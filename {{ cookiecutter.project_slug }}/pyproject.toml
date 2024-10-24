@@ -21,6 +21,7 @@ aiosqlite = {version = "^0.20.0"}
 aiomysql = {version = "^0.2.0", optional = true}
 aiopg = {version = "^1.4.0", optional = true}
 python-jose = "^3.3.0"
+aio-pika = "^9.4.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"

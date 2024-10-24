@@ -1,6 +1,6 @@
 from typing import Any
 
-from machine_api.broker import broker
+from {{ cookiecutter.project_module }}.broker import broker
 
 EMMITER_CREATED = 0b0001
 EMMITER_UPDATED = 0b0010

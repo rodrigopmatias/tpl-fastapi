@@ -24,5 +24,14 @@ class __Settings(BaseSettings):
         description="Arquivo que armazena a secret para validação do token",
     )
 
+    BROKER_DRY: bool = Field(
+        default=False, description="Habilita o broker para rodar em modo DRY"
+    )
+
+    BROKER_URL: str = Field(
+        default="amqp://user:secret@localhost/vhost?timeout=3",
+        description="URL de conexão com AMQP, interessante sempre definir o timeout",
+    )
+
 
 settings = __Settings()
