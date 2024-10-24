@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{  cookiecutter.project_slug }}
+  name: {{  cookiecutter.project_slug }}
+spec:
+  ports:
+    - name: "http"
+      port: 8000
+      protocol: TCP
+      targetPort: 8000
+  selector:
+    app: {{  cookiecutter.project_slug }}
+  type: ClusterIP

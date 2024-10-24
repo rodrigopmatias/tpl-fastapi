@@ -1,0 +1,10 @@
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ cookiecutter.project_slug }}
+data:
+  DEBUG: "no"
+  JWT_ALGORITHM: "HS256"
+  JWT_SECRET_KEY_FILE: "/etc/secrets/pub.key"
+  BROKER_DRY: "no"

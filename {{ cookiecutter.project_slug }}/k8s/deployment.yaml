@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ cookiecutter.project_slug }}
+  name: {{ cookiecutter.project_slug }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ cookiecutter.project_slug }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: {{ cookiecutter.project_slug }}
+    spec:
+      volumes:
+        - name: api-secrets
+          secret:
+            secretName: {{ cookiecutter.project_slug }}-secrets
+      imagePullSecrets:
+        - name: registry-secrets
+      containers:
+        - image: registry.internal:5000/matias/{{ cookiecutter.project_slug }}:v1.0.0
+          name: {{ cookiecutter.project_slug }}
+          volumeMounts:
+            - name: api-secrets
+              mountPath: /etc/secrets/pub.key
+              subPath: PUB_KEY
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: {{ cookiecutter.project_slug }}-configmap
+            - secretRef:
+                name: {{ cookiecutter.project_slug }}-secrets
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: "200m"
+              memory: 192M
+            requests:
+              cpu: "100m"
+              memory: 128M
+          livenessProbe:
+            httpGet:
+              path: /v1/live
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /v1/ready
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 5
