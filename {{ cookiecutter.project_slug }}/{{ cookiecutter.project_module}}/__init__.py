@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
-from {{cookiecutter.project_module}} import routes
+from {{cookiecutter.project_module}} import routes, logger, broker
 from {{cookiecutter.project_module}}.config import settings
+from {{cookiecutter.project_module}}.life import life_control
 
 
 def create_app() -> FastAPI:
+    logger.setup()
+    broker.setup()
+
     app = FastAPI(
         debug=settings.DEBUG,
         title="{{ cookiecutter.project_name }}",
@@ -14,6 +18,7 @@ def create_app() -> FastAPI:
         openapi_url="/doc/openapi.json",
         docs_url="/doc/swagger",
         redoc_url=None,
+        lifespan=life_control,
         default_response_class=ORJSONResponse,
     )
 
