@@ -15,4 +15,4 @@ git add .
 poetry run pre-commit run -av 
 git commit -am "start of project"
 
-openssl rand -base64 -out pub.key 64
+openssl rand -base64 128 | base64 -w0 > pub.key

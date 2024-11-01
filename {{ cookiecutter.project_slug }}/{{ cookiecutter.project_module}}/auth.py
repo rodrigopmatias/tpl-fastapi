@@ -16,6 +16,8 @@ class User(BaseModel):
     is_admin: bool
     roles: list[str]
 
+    def allowed(self, role: str) -> bool:
+        return  self.is_admin or role in self.roles
 
 def load_key(filepath: Path) -> str:
     buffer = ""
