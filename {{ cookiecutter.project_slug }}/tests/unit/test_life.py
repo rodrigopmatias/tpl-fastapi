@@ -2,8 +2,7 @@ from unittest import mock
 
 import pytest
 from fastapi import FastAPI
-
-from fake_api.life import LifeControlTask, life_control
+from {{cookiecutter.project_module}}.life import LifeControlTask, life_control
 
 
 class TestLifeControl:
@@ -23,7 +22,7 @@ class TestLifeControl:
 
     @pytest.mark.asyncio
     @mock.patch("asyncio.BaseEventLoop.create_task", new_callable=mock.Mock)
-    @mock.patch("fake_api.life.LifeControlTask.run", new_callable=mock.Mock)
+    @mock.patch("{{ cookiecutter.project_module }}.life.LifeControlTask.run", new_callable=mock.Mock)
     async def test_caller(
         self,
         mocked_task_run: mock.Mock,

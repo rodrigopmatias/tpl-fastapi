@@ -4,8 +4,7 @@ from sqlalchemy import Integer
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from fake_api.config import settings
+from {{cookiecutter.project_module}}.config import settings
 
 type Datasource = async_sessionmaker[AsyncSession]
 

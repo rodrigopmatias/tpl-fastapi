@@ -8,9 +8,8 @@ from uuid import uuid4
 import aio_pika
 import orjson as json
 from pydantic import BaseModel, Field
-
-from {{ cookiecutter.project_module }}.config import settings
-from {{ cookiecutter.project_module }}.life import LifeControlTask, life_control
+from {{cookiecutter.project_module}}.config import settings
+from {{cookiecutter.project_module}}.life import LifeControlTask, life_control
 
 logger = getLogger(__name__)
 
@@ -39,6 +38,9 @@ class __Broker(LifeControlTask):
     def __init__(self, queue_size: int = 30) -> None:
         self._queue: Queue[Envelop] = Queue(queue_size)
 
+    def is_running(self) -> bool:  # pragma: nocover
+        return True
+
     async def dispatch(
         self,
         target: str,
@@ -52,7 +54,7 @@ class __Broker(LifeControlTask):
 
 class __BrokerDRY(__Broker):
     async def run(self) -> None:
-        while True:
+        while self.is_running():
             if self._queue.empty():
                 await asyncio.sleep(0.1)
                 continue
@@ -75,7 +77,7 @@ class __BrokerAMQP(__Broker):
 
     async def _run(self) -> None:
         async with await aio_pika.connect_robust(settings.BROKER_URL) as amqp_conn:
-            while True:
+            while self.is_running():
                 if self._queue.empty():
                     await asyncio.sleep(0.1)
                     continue
@@ -106,4 +108,31 @@ class __BrokerAMQP(__Broker):
                 )
 
 
-broker = __BrokerDRY() if settings.BROKER_DRY else __BrokerAMQP()
+__broker_dry = __BrokerDRY()
+__broker_amqp = __BrokerAMQP()
+
+broker = __broker_dry if settings.BROKER_DRY else __broker_amqp
+
+
+async def dispatch(
+    target: str,
+    routing_key: str = "",
+    body: dict[str, Any] = Field(default_factory=lambda: {}),
+) -> None:
+    await broker.dispatch(target, routing_key, body)
+
+
+async def dispatch_by_dry(
+    target: str,
+    routing_key: str = "",
+    body: dict[str, Any] = Field(default_factory=lambda: {}),
+) -> None:
+    await __broker_dry.dispatch(target, routing_key, body)
+
+
+async def dispatch_by_amqp(
+    target: str,
+    routing_key: str = "",
+    body: dict[str, Any] = Field(default_factory=lambda: {}),
+) -> None:
+    await __broker_amqp.dispatch(target, routing_key, body)
