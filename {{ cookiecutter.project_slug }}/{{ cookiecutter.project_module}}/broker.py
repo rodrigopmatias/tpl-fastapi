@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from asyncio import Queue
+from importlib import metadata
 from logging import getLogger
 from typing import Any
 from uuid import uuid4
@@ -100,7 +101,7 @@ class __BrokerAMQP(__Broker):
                             default=str,
                             option=json.OPT_INDENT_2,
                         ),
-                        app_id="machine-api/v1.0.0",
+                        app_id=f"{{ cookiecutter.project_slug }}/v{metadata.version('{{ cookiecutter.project_slug }}')}",
                         content_type="application/json",
                         correlation_id=envelop.header.trace_id,
                     ),
