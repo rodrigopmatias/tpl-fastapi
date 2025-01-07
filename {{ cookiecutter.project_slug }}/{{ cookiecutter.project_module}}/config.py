@@ -20,7 +20,7 @@ class __Settings(BaseSettings):
     )
 
     JWT_SECERT_KEY_FILE: Path = Field(
-        default="pub.key",
+        default=Path("pub.key"),
         description="Arquivo que armazena a secret para validação do token",
     )
 

@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Any
 
+import jwt
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from jose import jwt
 from {{cookiecutter.project_module}} import create_app
 from {{cookiecutter.project_module}}.auth import load_key
 from {{cookiecutter.project_module}}.config import settings

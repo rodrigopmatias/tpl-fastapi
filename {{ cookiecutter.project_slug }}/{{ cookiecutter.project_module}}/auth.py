@@ -1,14 +1,15 @@
 from pathlib import Path
 from typing import Any
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import jwt
 from pydantic import BaseModel
 from {{cookiecutter.project_module}}.config import settings
 
 get_authorization = HTTPBearer()
 
+BUFFER_CHUNK_SIZE = 8192
 
 class User(BaseModel):
     id: int
@@ -23,7 +24,7 @@ def load_key(filepath: Path) -> str:
     buffer = ""
 
     with filepath.open() as fp:
-        for chunk in iter(lambda: fp.read(8192), ""):
+        for chunk in iter(lambda: fp.read(BUFFER_CHUNK_SIZE), ""):
             buffer += chunk
 
     return buffer[:-1] if buffer[-1] == '\n' else buffer
@@ -36,7 +37,7 @@ def current_user(
         key = load_key(settings.JWT_SECERT_KEY_FILE)
 
         data: dict[str, Any] = jwt.decode(
-            authorization.credentials, key, algorithms=[settings.JWT_ALGORITHM]
+            authorization.credentials, key, algorithms=[settings.JWT_ALGORITHM], verify=True
         )
 
         return User(**data.get("user", {}))

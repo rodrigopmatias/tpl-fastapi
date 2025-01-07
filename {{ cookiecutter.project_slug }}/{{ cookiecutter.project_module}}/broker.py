@@ -13,7 +13,7 @@ from {{cookiecutter.project_module}}.config import settings
 from {{cookiecutter.project_module}}.life import LifeControlTask, life_control
 
 logger = getLogger(__name__)
-
+APP_USER_AGENT = f"{{ cookiecutter.project_slug }}/v{metadata.version('{{ cookiecutter.project_slug }}')}"
 
 def setup():
     life_control.include_life_task(
@@ -101,7 +101,7 @@ class __BrokerAMQP(__Broker):
                             default=str,
                             option=json.OPT_INDENT_2,
                         ),
-                        app_id=f"{{ cookiecutter.project_slug }}/v{metadata.version('{{ cookiecutter.project_slug }}')}",
+                        app_id=APP_USER_AGENT,
                         content_type="application/json",
                         correlation_id=envelop.header.trace_id,
                     ),
