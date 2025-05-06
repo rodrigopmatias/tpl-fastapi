@@ -11,6 +11,7 @@ import orjson as json
 from pydantic import BaseModel, Field
 from {{cookiecutter.project_module}}.config import settings
 from {{cookiecutter.project_module}}.life import LifeControlTask, life_control
+from {{cookiecutter.project_module}}.middlewares import request_id
 
 logger = getLogger(__name__)
 APP_USER_AGENT = f"{{ cookiecutter.project_slug }}/v{metadata.version('{{ cookiecutter.project_slug }}')}"
@@ -49,7 +50,12 @@ class __Broker(LifeControlTask):
         body: dict[str, Any] = Field(default_factory=lambda: {}),
     ) -> None:
         await self._queue.put(
-            Envelop(target=target, routing_key=routing_key, body=body)
+            Envelop(
+                target=target,
+                routing_key=routing_key,
+                body=body,
+                header=EnvelopHeader(trace_id=request_id.restore()),
+            )
         )
 
 
@@ -61,6 +67,8 @@ class __BrokerDRY(__Broker):
                 continue
 
             envelop = await self._queue.get()
+            request_id.store(envelop.header.trace_id)
+
             logger.info(
                 json.dumps(
                     envelop.model_dump(), default=str, option=json.OPT_INDENT_2
@@ -84,6 +92,7 @@ class __BrokerAMQP(__Broker):
                     continue
 
                 envelop = await self._queue.get()
+                request_id.store(envelop.header.trace_id)
 
                 logger.info(
                     f"enviando mensagem para {envelop.target}:{envelop.routing_key}"

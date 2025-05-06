@@ -5,7 +5,7 @@ REGISTRY_SERVICE=localhost:5000
 PKG_MODULE=$(shell echo $(PROJET_NAME) | sed -s "s/-/_/gi")
 APP_PORT=8000
 APP_HOST=127.0.0.1
-POETRY_EXTRA_ARGS=
+POETRY_EXTRA_ARGS={% if cookiecutter.database_support != "sqlite" %}-E "{{cookiecutter.database_support}}"{% endif %}
 
 CURRENT_BRANCH=$(shell git branch --show-current)
 ifeq ($(CURRENT_BRANCH), main)
@@ -17,6 +17,12 @@ else
 endif
 IMAGE_BASE=$(REGISTRY_SERVICE)/matias/$(PROJET_NAME)
 IMAGE_TARGET=$(IMAGE_BASE):v$(APP_VERSION)
+
+dev.env:
+	@echo BROKER_DRY=y > dev.env
+
+run/dev: install dev.env
+	poetry run uvicorn --factory "$(PKG_MODULE):create_app" --port $(APP_PORT) --host $(APP_HOST) --reload
 
 run: install
 	poetry run uvicorn --factory "$(PKG_MODULE):create_app" --port $(APP_PORT) --host $(APP_HOST)

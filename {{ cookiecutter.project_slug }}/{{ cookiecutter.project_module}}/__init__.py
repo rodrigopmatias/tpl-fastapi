@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
-from {{cookiecutter.project_module}} import routes, logger, broker
+from {{cookiecutter.project_module}} import broker, logger, middlewares, routes
 from {{cookiecutter.project_module}}.config import settings
 from {{cookiecutter.project_module}}.life import life_control
 
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
         default_response_class=ORJSONResponse,
     )
 
+    middlewares.init_app(app)
     routes.init_app(app)
 
     return app
