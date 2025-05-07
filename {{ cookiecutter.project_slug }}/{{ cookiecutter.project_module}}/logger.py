@@ -19,7 +19,7 @@ def setup() -> None:
             "disable_existing_loggers": False,
             "formatters": {
                 "default": {
-                    "class": "sample_api.logger.InjectExtraFormatter",
+                    "class": "{{cookiecutter.project_module}}.logger.InjectExtraFormatter",
                     "style": "{",
                     "format": "{asctime} - {levelname:^7} - {request_id} - {name} - {message}",
                     "datefmt": "%Y-%m-%dT%H:%M:%S%z",
