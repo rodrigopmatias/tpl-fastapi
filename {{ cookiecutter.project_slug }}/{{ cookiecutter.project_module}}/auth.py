@@ -1,3 +1,4 @@
+from logging import getLogger
 from pathlib import Path
 from typing import Any
 
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from {{cookiecutter.project_module}}.config import settings
 
 get_authorization = HTTPBearer()
-
+logger = getLogger(__name__)
 BUFFER_CHUNK_SIZE = 8192
 
 class User(BaseModel):
@@ -35,11 +36,17 @@ def current_user(
 ) -> User:
     try:
         key = load_key(settings.JWT_SECERT_KEY_FILE)
-
+        
+        logger.info("verificando token de autorização.")
         data: dict[str, Any] = jwt.decode(
             authorization.credentials, key, algorithms=[settings.JWT_ALGORITHM], verify=True
         )
 
-        return User(**data.get("user", {}))
-    except Exception:
+        user = User(**data.get("user", {}))
+        logger.info(f"autorização validada para o usuário com id {user.id} como {'admin' if user.is_admin else 'usuário comum'}")
+        return user
+    except Exception as e:
+        logger.warning("a autorização não passou pela validação")
+        logger.error(e)
+
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid token")

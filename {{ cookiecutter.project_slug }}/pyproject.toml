@@ -11,8 +11,8 @@ readme = "README.md"
 
 [tool.poetry.extras]
 mysql = ["aiomysql"]
-pg = ["aiopg"]
-all = ["aiomysql", "aiopg"]
+pg = ["asyncpg"]
+all = ["aiomysql", "asyncpg"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -23,7 +23,7 @@ orjson = "^3.10.7"
 uvicorn = {version = "^0.31.1", extras = ["h11"]}
 aiosqlite = {version = "^0.20.0"}
 aiomysql = {version = "^0.2.0", optional = true}
-aiopg = {version = "^1.4.0", optional = true}
+asyncpg = {version = "^0.30.0", optional = true }
 aio-pika = "^9.4.3"
 pyjwt = {version = "^2.10.1", extras = ["crypto"]}
 

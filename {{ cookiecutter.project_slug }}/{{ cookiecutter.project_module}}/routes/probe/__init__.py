@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from pydantic import BaseModel
-from {{cookiecutter.project_module}}.db import DBSessionFactory, db_session_factory
+from {{cookiecutter.project_module}}.config import settings
+from {{cookiecutter.project_module}}.helpers.controllers import DBController
+from {{cookiecutter.project_module}}.helpers.models import DBModel
 from {{cookiecutter.project_module}}.routes.probe import probes
 
 router = APIRouter(prefix="/v1", tags=["probe"])
+
+
+def factory_db() -> DBController:
+    return DBController(settings.DB_URL, DBModel)
 
 
 def init_app(app: FastAPI) -> None:
@@ -16,9 +22,9 @@ class ProbeMessage(BaseModel):
 
 @router.get("/live")
 async def live(
-    db_factory: DBSessionFactory = Depends(db_session_factory),
+    db: DBController = Depends(factory_db),
 ) -> ProbeMessage:
-    result = await probes.is_ready(db_factory)
+    result = await probes.is_ready(db)
 
     if all(result.values()):
         return ProbeMessage(message="Im live!!!")
@@ -28,9 +34,9 @@ async def live(
 
 @router.get("/ready")
 async def ready(
-    db_factory: DBSessionFactory = Depends(db_session_factory),
+    db: DBController = Depends(factory_db),
 ) -> ProbeMessage:
-    result = await probes.is_ready(db_factory)
+    result = await probes.is_ready(db)
 
     if all(result.values()):
         return ProbeMessage(message="Im ready!!!")

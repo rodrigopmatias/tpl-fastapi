@@ -3,16 +3,16 @@ from logging import getLogger
 
 from sqlalchemy import select, text
 from {{cookiecutter.project_module}}.broker import broker
-from {{cookiecutter.project_module}}.db import DBSessionFactory
+from {{cookiecutter.project_module}}.helpers.controllers import DBController
 
 logger = getLogger(__name__)
 
 
-async def is_database_ready(db_factory: DBSessionFactory) -> bool:
+async def is_database_ready(db: DBController) -> bool:
     result = True
 
     try:
-        async with db_factory() as s:
+        async with db.begin() as s:
             await s.execute(select(text("1")))
     except Exception as e:
         logger.error(e)
@@ -28,8 +28,8 @@ async def is_broker_ready() -> bool:
     return broker.is_running()
 
 
-async def is_ready(db_factory: DBSessionFactory) -> dict[str, bool]:
+async def is_ready(db: DBController) -> dict[str, bool]:
     return {
-        "db": await is_database_ready(db_factory),
+        "db": await is_database_ready(db),
         "broker": await is_broker_ready(),
     }
