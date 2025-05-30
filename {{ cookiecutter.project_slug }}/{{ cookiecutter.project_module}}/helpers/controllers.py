@@ -74,6 +74,7 @@ class DBController:
             await session.commit()
         except DatabaseError:
             await session.rollback()
+            raise
 
 
 M = TypeVar("M", bound=DBModel)
@@ -87,8 +88,8 @@ class BaseController(Generic[M, CP, PUP, R]):
     return_datatype: type[R]
     _db: DBController
 
-    def __init__(self, db_url: str, model_base: type[DBModel]) -> None:
-        type(self)._db = DBController(db_url, model_base)
+    def __init__(self, db_url: str) -> None:
+        type(self)._db = DBController(db_url, self.model)
 
     @property
     def db(self) -> DBController:
@@ -148,11 +149,16 @@ class BaseController(Generic[M, CP, PUP, R]):
                 yield self.return_datatype.model_validate(entity)
 
     async def update_or_create(
-        self, id: int, payload: CP, allow_create: bool = True
+        self,
+        id: int,
+        payload: CP,
+        allow_create: bool = True,
+        extra_filters: list[FilterExpression] | None = None,
     ) -> tuple[bool, R]:
         async with self.db.begin() as s:
+            sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             entity = (
-                await s.execute(select(self.model).where(self.model.id == id))
+                await s.execute(select(self.model).where(*sentences))
             ).scalar_one_or_none()
 
             if entity:
@@ -183,10 +189,13 @@ class BaseController(Generic[M, CP, PUP, R]):
 
             return True, self.return_datatype.model_validate(entity)
 
-    async def partial_update(self, id: int, payload: PUP) -> R:
+    async def partial_update(
+        self, id: int, payload: PUP, extra_filters: list[FilterExpression] | None = None
+    ) -> R:
         async with self.db.begin() as s:
+            sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             entity = (
-                await s.execute(select(self.model).where(self.model.id == id))
+                await s.execute(select(self.model).where(*sentences))
             ).scalar_one_or_none()
 
             if entity:
@@ -208,10 +217,13 @@ class BaseController(Generic[M, CP, PUP, R]):
             )
             raise EntityNotFoundError(f"item com id {id} não foi encontrado.")
 
-    async def delete(self, id: int) -> None:
+    async def delete(
+        self, id: int, extra_filters: list[FilterExpression] | None = None
+    ) -> None:
         async with self.db.begin() as s:
+            sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             entity = (
-                await s.execute(select(self.model).where(self.model.id == id))
+                await s.execute(select(self.model).where(*sentences))
             ).scalar_one_or_none()
 
             if entity:
@@ -228,11 +240,14 @@ class BaseController(Generic[M, CP, PUP, R]):
             )
             raise EntityNotFoundError(f"item com id {id} não foi encontrado.")
 
-    async def retrive(self, id: int) -> R:
+    async def retrive(
+        self, id: int, extra_filters: list[FilterExpression] | None = None
+    ) -> R:
         async with self.db.begin() as s:
             logger.info(f"recuperando o item {self.model.__tablename__} com id {id}")
+            sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             entity = (
-                await s.execute(select(self.model).where(self.model.id == id))
+                await s.execute(select(self.model).where(*sentences))
             ).scalar_one_or_none()
 
             if entity:
