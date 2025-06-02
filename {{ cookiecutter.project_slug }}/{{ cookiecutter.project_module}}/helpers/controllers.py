@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import Annotated, Any, AsyncGenerator, Generic, TypeVar
+from typing import Annotated, Any, AsyncGenerator, Callable, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 from sqlalchemy import (
@@ -23,6 +23,19 @@ from {{cookiecutter.project_module}}.helpers.models import DBModel
 logger = getLogger(__name__)
 
 type FilterExpression = UnaryExpression | BinaryExpression | ColumnElement
+
+
+def extract_filters(
+    values: dict[str, Any], filter_map: dict[str, Callable[[Any], FilterExpression]]
+) -> list[FilterExpression]:
+    sentences: list[FilterExpression] = []
+
+    for attr, value in values.items():
+        fn_filter = filter_map.get(attr)
+        if fn_filter:
+            sentences.append(fn_filter(value))
+
+    return sentences
 
 
 class EntityNotFoundError(Exception):
@@ -92,6 +105,10 @@ class BaseController(Generic[M, CP, PUP, R]):
         type(self)._db = DBController(db_url, self.model)
 
     @property
+    def joins(self) -> dict[type[DBModel], FilterExpression]:
+        return {}
+
+    @property
     def db(self) -> DBController:
         return type(self)._db
 
@@ -103,9 +120,13 @@ class BaseController(Generic[M, CP, PUP, R]):
         filters = filters if filters else []
         async with self.db.begin() as s:
             logger.info(
-                f"verificando a existencia de {self.model.__tablename__} para o filtro passado"
+                f"verificando a existencia de {self.model.__tablename__} para o filtro"
             )
             stmt = select(func.count(self.model.id)).where(*filters).limit(1)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
             return (await s.execute(stmt)).scalar_one() > 0
 
     async def count(
@@ -116,9 +137,13 @@ class BaseController(Generic[M, CP, PUP, R]):
         filters = filters if filters else []
         async with self.db.begin() as s:
             logger.info(
-                f"contando os items de {self.model.__tablename__} para o filtro passado"
+                f"contando os items de {self.model.__tablename__} para o filtro"
             )
             stmt = select(func.count(self.model.id)).where(*filters)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
             return (await s.execute(stmt)).scalar_one()
 
     async def find(
@@ -141,9 +166,10 @@ class BaseController(Generic[M, CP, PUP, R]):
                 .limit(limit)
             )
 
-            logger.info(
-                f"buscando itens em {self.model.__tablename__} para o filtro passado"
-            )
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
+            logger.info(f"buscando itens em {self.model.__tablename__} para o filtro")
             result = await s.execute(stmt)
             for entity in result.scalars():
                 yield self.return_datatype.model_validate(entity)
@@ -157,9 +183,12 @@ class BaseController(Generic[M, CP, PUP, R]):
     ) -> tuple[bool, R]:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
-            entity = (
-                await s.execute(select(self.model).where(*sentences))
-            ).scalar_one_or_none()
+            stmt = select(self.model).where(*sentences)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
+            entity = (await s.execute(stmt)).scalar_one_or_none()
 
             if entity:
                 logger.info(
@@ -194,9 +223,12 @@ class BaseController(Generic[M, CP, PUP, R]):
     ) -> R:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
-            entity = (
-                await s.execute(select(self.model).where(*sentences))
-            ).scalar_one_or_none()
+            stmt = select(self.model).where(*sentences)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
+            entity = (await s.execute(stmt)).scalar_one_or_none()
 
             if entity:
                 logger.info(
@@ -222,9 +254,12 @@ class BaseController(Generic[M, CP, PUP, R]):
     ) -> None:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
-            entity = (
-                await s.execute(select(self.model).where(*sentences))
-            ).scalar_one_or_none()
+            stmt = select(self.model).where(*sentences)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
+            entity = (await s.execute(stmt)).scalar_one_or_none()
 
             if entity:
                 logger.error(
@@ -246,9 +281,12 @@ class BaseController(Generic[M, CP, PUP, R]):
         async with self.db.begin() as s:
             logger.info(f"recuperando o item {self.model.__tablename__} com id {id}")
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
-            entity = (
-                await s.execute(select(self.model).where(*sentences))
-            ).scalar_one_or_none()
+            stmt = select(self.model).where(*sentences)
+
+            for target, sentence in self.joins.items():
+                stmt = stmt.join(target, sentence)
+
+            entity = (await s.execute(stmt)).scalar_one_or_none()
 
             if entity:
                 return self.return_datatype.model_validate(entity)
