@@ -205,9 +205,7 @@ class BaseController(Generic[M, CP, PUP, R]):
                 return False, self.return_datatype.model_validate(entity)
 
             if not allow_create:
-                logger.error(
-                    f"o item {self.model.__tablename__} com id {id} não foi encontrado"
-                )
+                raise EntityNotFoundError(f"item com id {id} não foi encontrado.")
 
             entity = self.model(id=id, **payload.model_dump())
             logger.info(f"criando novo item {self.model.__tablename__} com id {id}")

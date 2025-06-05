@@ -8,7 +8,7 @@ BM = TypeVar("BM", bound=BaseModel)
 class BaseResultSet(BaseModel, Generic[BM]):
     count: Annotated[int, Field(ge=0)] = 0
     next: str | None = None
-    previus: str | None = None
+    previous: str | None = None
     items: list[BM] = Field(default_factory=list)
 
 
