@@ -43,10 +43,13 @@ def current_user(
         )
 
         user = User(**data.get("user", {}))
-        logger.info(f"autorização validada para o usuário com id {user.id} como {'admin' if user.is_admin else 'usuário comum'}")
+        logger.info(
+            f"autorização validada para o usuário com id {user.id} "
+            f"como {'administrador' if user.is_admin else 'usuário comum'}"
+        )
         return user
     except Exception as e:
         logger.warning("a autorização não passou pela validação")
-        logger.error(e)
+        logger.error(f"{type(e)}: {e}")
 
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid token")

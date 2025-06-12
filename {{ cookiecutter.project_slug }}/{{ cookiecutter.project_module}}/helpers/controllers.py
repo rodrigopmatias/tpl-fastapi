@@ -1,6 +1,15 @@
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import Annotated, Any, AsyncGenerator, Callable, Generic, TypeVar
+from typing import (
+    Annotated,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Generic,
+    Literal,
+    LiteralString,
+    TypeVar,
+)
 
 from pydantic import BaseModel, Field
 from sqlalchemy import (
@@ -23,6 +32,28 @@ from {{cookiecutter.project_module}}.helpers.models import DBModel
 logger = getLogger(__name__)
 
 type FilterExpression = UnaryExpression | BinaryExpression | ColumnElement
+
+ORDER_SEPARATOR = "."
+
+def extract_orders(
+    ordering: list[LiteralString],
+    model: type[DBModel],
+    allowed_fields: list[str] = Field(default_factory=lambda: ["id"]),
+) -> list[UnaryExpression]:
+    orders: list[UnaryExpression] = []
+    if not ordering:
+        return [model.id.asc()]
+
+    for order in ordering:
+        field_name, direction = order.split(ORDER_SEPARATOR)
+        if not field_name in allowed_fields:
+            continue
+
+        field: ColumnElement | None = getattr(model, field_name, None)
+        if field:
+            orders.append(field.asc() if direction == "asc" else field.desc())
+
+    return orders
 
 
 def extract_filters(
@@ -155,7 +186,7 @@ class BaseController(Generic[M, CP, PUP, R]):
         limit: Annotated[int, Field(gt=0, le=100)] = 30,
     ) -> AsyncGenerator[R, Any]:
         filters = filters if filters else []
-        ordering = ordering if ordering else []
+        ordering = ordering if ordering else [self.model.id.asc()]
 
         async with self.db.begin() as s:
             stmt = (
@@ -219,6 +250,18 @@ class BaseController(Generic[M, CP, PUP, R]):
     async def partial_update(
         self, id: int, payload: PUP, extra_filters: list[FilterExpression] | None = None
     ) -> R:
+        return await self._partial_update(
+            id,
+            payload=payload.model_dump(exclude_unset=True),
+            extra_filters=extra_filters,
+        )
+
+    async def _partial_update(
+        self,
+        id: int,
+        payload: dict[str, Any],
+        extra_filters: list[FilterExpression] | None = None,
+    ) -> R:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             stmt = select(self.model).where(*sentences)
@@ -233,9 +276,7 @@ class BaseController(Generic[M, CP, PUP, R]):
                     f"atualizando os dados de {self.model.__tablename__} com id {id}"
                 )
                 await s.execute(
-                    update(self.model)
-                    .where(self.model.id == id)
-                    .values(payload.model_dump(exclude_unset=True))
+                    update(self.model).where(self.model.id == id).values(**payload)
                 )
                 await s.commit()
                 await s.refresh(entity)
