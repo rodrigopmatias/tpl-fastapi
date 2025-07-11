@@ -27,7 +27,8 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from {{cookiecutter.project_module}}.helpers.models import DBModel
+
+from .models import DBModel
 
 logger = getLogger(__name__)
 
