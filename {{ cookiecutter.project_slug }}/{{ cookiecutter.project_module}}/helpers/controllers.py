@@ -6,7 +6,6 @@ from typing import (
     AsyncGenerator,
     Callable,
     Generic,
-    Literal,
     LiteralString,
     TypeVar,
 )
@@ -15,6 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import (
     BinaryExpression,
     ColumnElement,
+    Select,
     UnaryExpression,
     func,
     select,
@@ -34,6 +34,7 @@ logger = getLogger(__name__)
 type FilterExpression = UnaryExpression | BinaryExpression | ColumnElement
 
 ORDER_SEPARATOR = "."
+
 
 def extract_orders(
     ordering: list[LiteralString],
@@ -121,15 +122,16 @@ class DBController:
             raise
 
 
-M = TypeVar("M", bound=DBModel)
-CP = TypeVar("CP", bound=BaseModel)
-PUP = TypeVar("PUP", bound=BaseModel)
-R = TypeVar("R", bound=BaseModel)
+TDataModel = TypeVar("M", bound=DBModel)
+TEditable = TypeVar("C", bound=BaseModel)
+TPartialEditable = TypeVar("P", bound=BaseModel)
+TReturnDatatype = TypeVar("R", bound=BaseModel)
+TGeneric = TypeVar("T")
 
 
-class BaseController(Generic[M, CP, PUP, R]):
-    model: type[M]
-    return_datatype: type[R]
+class BaseController(Generic[TDataModel, TEditable, TPartialEditable, TReturnDatatype]):
+    model: type[TDataModel]
+    return_datatype: type[TReturnDatatype]
     _db: DBController
 
     def __init__(self, db_url: str) -> None:
@@ -138,6 +140,16 @@ class BaseController(Generic[M, CP, PUP, R]):
     @property
     def joins(self) -> dict[type[DBModel], FilterExpression]:
         return {}
+
+    def _apply_join(
+        self,
+        stmt: Select[tuple[TGeneric]],
+        joins: dict[type[DBModel], FilterExpression],
+    ) -> Select[tuple[TGeneric]]:
+        for target, sentence in joins.items():
+            stmt = stmt.join(target, sentence)
+
+        return stmt
 
     @property
     def db(self) -> DBController:
@@ -153,10 +165,9 @@ class BaseController(Generic[M, CP, PUP, R]):
             logger.info(
                 f"verificando a existencia de {self.model.__tablename__} para o filtro"
             )
-            stmt = select(func.count(self.model.id)).where(*filters).limit(1)
-
-            for target, sentence in self.joins.items():
-                stmt = stmt.join(target, sentence)
+            stmt = self._apply_join(
+                select(func.count(self.model.id)).where(*filters).limit(1), self.joins
+            )
 
             return (await s.execute(stmt)).scalar_one() > 0
 
@@ -170,10 +181,9 @@ class BaseController(Generic[M, CP, PUP, R]):
             logger.info(
                 f"contando os items de {self.model.__tablename__} para o filtro"
             )
-            stmt = select(func.count(self.model.id)).where(*filters)
-
-            for target, sentence in self.joins.items():
-                stmt = stmt.join(target, sentence)
+            stmt = self._apply_join(
+                select(func.count(self.model.id)).where(*filters), self.joins
+            )
 
             return (await s.execute(stmt)).scalar_one()
 
@@ -184,21 +194,21 @@ class BaseController(Generic[M, CP, PUP, R]):
         ordering: list[UnaryExpression] | None = None,
         offset: Annotated[int, Field(ge=0)] = 0,
         limit: Annotated[int, Field(gt=0, le=100)] = 30,
-    ) -> AsyncGenerator[R, Any]:
+    ) -> AsyncGenerator[TReturnDatatype, Any]:
         filters = filters if filters else []
         ordering = ordering if ordering else [self.model.id.asc()]
 
         async with self.db.begin() as s:
-            stmt = (
-                select(self.model)
-                .where(*filters)
-                .order_by(*ordering)
-                .offset(offset)
-                .limit(limit)
+            stmt = self._apply_join(
+                (
+                    select(self.model)
+                    .where(*filters)
+                    .order_by(*ordering)
+                    .offset(offset)
+                    .limit(limit)
+                ),
+                self.joins,
             )
-
-            for target, sentence in self.joins.items():
-                stmt = stmt.join(target, sentence)
 
             logger.info(f"buscando itens em {self.model.__tablename__} para o filtro")
             result = await s.execute(stmt)
@@ -208,10 +218,10 @@ class BaseController(Generic[M, CP, PUP, R]):
     async def update_or_create(
         self,
         id: int,
-        payload: CP,
+        payload: TEditable,
         allow_create: bool = True,
         extra_filters: list[FilterExpression] | None = None,
-    ) -> tuple[bool, R]:
+    ) -> tuple[bool, TReturnDatatype]:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             stmt = select(self.model).where(*sentences)
@@ -248,8 +258,11 @@ class BaseController(Generic[M, CP, PUP, R]):
             return True, self.return_datatype.model_validate(entity)
 
     async def partial_update(
-        self, id: int, payload: PUP, extra_filters: list[FilterExpression] | None = None
-    ) -> R:
+        self,
+        id: int,
+        payload: TPartialEditable,
+        extra_filters: list[FilterExpression] | None = None,
+    ) -> TReturnDatatype:
         return await self._partial_update(
             id,
             payload=payload.model_dump(exclude_unset=True),
@@ -261,7 +274,7 @@ class BaseController(Generic[M, CP, PUP, R]):
         id: int,
         payload: dict[str, Any],
         extra_filters: list[FilterExpression] | None = None,
-    ) -> R:
+    ) -> TReturnDatatype:
         async with self.db.begin() as s:
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
             stmt = select(self.model).where(*sentences)
@@ -316,7 +329,7 @@ class BaseController(Generic[M, CP, PUP, R]):
 
     async def retrive(
         self, id: int, extra_filters: list[FilterExpression] | None = None
-    ) -> R:
+    ) -> TReturnDatatype:
         async with self.db.begin() as s:
             logger.info(f"recuperando o item {self.model.__tablename__} com id {id}")
             sentences = [self.model.id == id, *(extra_filters if extra_filters else [])]
@@ -335,7 +348,7 @@ class BaseController(Generic[M, CP, PUP, R]):
             )
             raise EntityNotFoundError(f"item com id {id} não foi encontrado.")
 
-    async def create(self, payload: CP) -> R:
+    async def create(self, payload: TEditable) -> TReturnDatatype:
         async with self.db.begin() as s:
             entity = self.model(**payload.model_dump())
             logger.info(f"criando novo item {self.model.__tablename__}")
