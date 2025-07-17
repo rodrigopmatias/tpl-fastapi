@@ -11,13 +11,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.115.0"
 pydantic-settings = "^2.5.2"
-orjson = "^3.10.7"
 uvicorn = {version = "^0.31.1", extras = ["h11"]}
-aio-pika = "^9.4.3"
-pyjwt = {version = "^2.10.1", extras = ["crypto"]}
 core-controller = {git = "https://github.com/matias-incub/core-controller.git", rev = "main", extras = ["{{ cookiecutter.database_support }}"], develop = true}
+core-api = {git = "https://github.com/matias-incub/core-api.git", rev = "main", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"

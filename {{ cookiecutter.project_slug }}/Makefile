@@ -18,7 +18,6 @@ endif
 IMAGE_BASE=$(REGISTRY_SERVICE)/matias/$(PROJET_NAME)
 IMAGE_TARGET=$(IMAGE_BASE):v$(APP_VERSION)
 CONTAINER_PLATFORM="linux/amd64"
-GITHUB_AUTHORIZATION=
 
 dev.env:
 	@echo BROKER_DRY=y > dev.env
@@ -54,7 +53,8 @@ push: build
 
 build:
 	podman image build \
-		--build-arg GITHUB_AUTHORIZATION="$(GITHUB_AUTHORIZATION)" \
+		--platform $(CONTAINER_PLATFORM) \
+		--secret id=gh-auth,env=GITHUB_AUTHORIZATION \
 		--build-arg POETRY_EXTRA_ARGS="$(POETRY_EXTRA_ARGS)" \
 		-t $(IMAGE_TARGET) .
 

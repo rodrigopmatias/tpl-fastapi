@@ -1,8 +1,8 @@
+from core_api.life import life_control
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from {{cookiecutter.project_module}} import broker, logger, middlewares, routes
 from {{cookiecutter.project_module}}.config import settings
-from {{cookiecutter.project_module}}.life import life_control
 
 
 def create_app() -> FastAPI:

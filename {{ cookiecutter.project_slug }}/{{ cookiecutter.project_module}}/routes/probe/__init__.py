@@ -1,8 +1,8 @@
+from core_controller.controllers import DBController
+from core_controller.models import DBModel
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from pydantic import BaseModel
 from {{cookiecutter.project_module}}.config import settings
-from {{cookiecutter.project_module}}.helpers.controllers import DBController
-from {{cookiecutter.project_module}}.helpers.models import DBModel
 from {{cookiecutter.project_module}}.routes.probe import probes
 
 router = APIRouter(prefix="/v1", tags=["probe"])

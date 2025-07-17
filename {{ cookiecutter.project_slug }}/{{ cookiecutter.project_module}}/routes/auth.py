@@ -1,5 +1,6 @@
+from core_api.auth import User
 from fastapi import APIRouter, Depends, FastAPI
-from {{cookiecutter.project_module}}.auth import User, current_user
+from {{cookiecutter.project_module}}.auth import current_user
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 

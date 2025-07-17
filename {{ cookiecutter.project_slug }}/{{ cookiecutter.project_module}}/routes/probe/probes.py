@@ -1,9 +1,9 @@
 import asyncio
 from logging import getLogger
 
+from core_controller.controllers import DBController
 from sqlalchemy import select, text
 from {{cookiecutter.project_module}}.broker import broker
-from {{cookiecutter.project_module}}.helpers.controllers import DBController
 
 logger = getLogger(__name__)
 
